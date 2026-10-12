@@ -1,0 +1,64 @@
+# DiagAD 默认配置（论文复现默认骨干：DINOv2 ViT-B/14，对角高斯参考）
+
+seed: 42
+device: cuda
+
+model:
+  # 视觉主干选择器：mobileclip | dinov2（DiagAD 论文默认 dinov2）
+  backbone: dinov2
+  # —— MobileCLIP-S1（轻量，FastViT 视觉塔；与文本塔同族 CLIP）——
+  mobileclip_model_id: MobileCLIP-S1
+  weights: weights/mobileclip_s1/open_clip_model.safetensors
+  stages: [1, 2, 3]                  # FastViT 的 stage 索引 -> 分辨率 28 / 14 / 7（28x28 为逐位置高斯最优甜点）
+  scale_names: [P3, P4, P5]
+  img_size: 256
+  out_dim: 512
+  adapter_bottleneck: 256
+  # —— DINOv2（强特征骨干，facebookresearch/dinov2 经 torch.hub 缓存）——
+  dinov2_model_id: dinov2_vitb14_reg
+  dinov2_scales: {P3: 392, P4: 224}  # 多尺度 patch 网格：P3=28x28(392), P4=16x16(224)
+  dinov2_proj_dim: 256               # 随机固定投影降维（降噪/控协方差开销）
+
+method:
+  fusion: single                       # single | mean | ada
+  single_scale: P3                     # 最细尺度（28x28，逐位置高斯最优）
+  fgsc: off                            # off | lowpass(固定低通) | adaptive(纹理引导低通)
+  fgsc_lambda: 0.8                     # a0：全局基础降噪强度
+  fgsc_tau: 0.4                        # a1：纹理引导的额外强度
+  fgsc_kernel: 33                      # K：高斯低通核大小
+  texture_win: 9                # 纹理能量局部窗口
+  dpa: false
+  dpa_thresholds: [0.25, 0.45]
+  prompt_level: L0+L1+L2
+  image_score_topk: 0.01
+  image_blur_k: 11                   # 图像级打分前的平滑核（抑制孤立噪声）
+  image_area_t: 0.0                   # 双线索图像打分：面积占比阈值(>0 启用)；实测对均值无益，默认关闭
+  shrinkage: 0.1
+  ref_smooth: 7                      # 正常参考均值的位置空间平滑核（提升像素AUROC，鲁棒错位）
+  ada_temperature: 4.0
+  ada_learnable: true
+
+train:
+  fit_epochs: 5                        # 适配器训练轮数（仅用正常训练图）
+  lr: 1.0e-3
+  batch_size: 8
+
+eval:
+  batch_size: 4
+  map_size: 256
+  tiny_ratio: 0.001                    # 微小缺陷：缺陷像素占比 <= 0.1%
+
+data:
+  mvtec_root: data/mvtec_ad
+  pcb_root: data/processed/pcb   # 注: PCB 数据已于 2026-10 清理(论文仅保留汇总结论), 该路径仅作占位
+  pvel_root: data/processed/pvel_ad
+  neu_root: data/processed/neu
+  # MVTec AD 官方 15 类（本地 data/mvtec_ad 已全部就位，论文主结果即 15 类平均）
+  mvtec_categories: [bottle, cable, capsule, carpet, grid, hazelnut, leather, metal_nut, pill, screw, tile, toothbrush, transistor, wood, zipper]
+  mvtec_texture_like: [grid]
+  # PCB 跨类别零样本：3 类已知（训练时可见其正常样本） + 3 类零样本（缺陷形态首次出现）
+  pcb_known: [missing_hole, mouse_bite, spur]
+  pcb_zero_shot: [open_circuit, short, spurious_copper]
+  # NEU-DET 跨类别零样本（与实验方案 4.3 一致）
+  neu_known: [patches, pitted_surface, rolled_in_scale]      # 斑块 / 麻面 / 轧入氧化皮
+  neu_zero_shot: [crazing, inclusion, scratches]             # 裂纹 / 夹杂物 / 划痕

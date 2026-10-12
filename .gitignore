@@ -1,0 +1,78 @@
+# ============ large data / model / artifact directories ============
+weights/*
+!weights/README.md
+data/
+outputs/
+logs/
+backup/
+exp/sensitivity/
+
+# ============ embedded third-party reference repo (has its own .git) ============
+code/refs/SubspaceAD/
+
+# ============ LaTeX build artifacts ============
+*.aux
+*.log
+*.out
+*.bbl
+*.blg
+*.toc
+*.lof
+*.lot
+*.spl
+*.synctex.gz
+
+# ============ build deliverables (regenerable) ============
+# NOTE: main.pdf / main_fix.pdf / *_submission.zip are committed as the
+#       v1.3 IEEE TIM submission baseline artifacts (per user request).
+
+# ============ temp diagnostic crops / inspect renders ============
+Paper/figures/_*.png
+Paper/figures/framework_inspect.png
+
+# ============ python ============
+__pycache__/
+*.pyc
+.ipynb_checkpoints/
+
+# ============ OS / editor ============
+.DS_Store
+Thumbs.db
+.idea/
+.vscode/
+
+# ============ agent-internal memory (not part of the paper) ============
+.workbuddy/
+MEMORY.md
+
+# ============ local font workaround (machine-specific, regenerable) ============
+Paper/*.pfb
+Paper/measurement/*.pfb
+
+# ============ local build temp (kept out of repo) ============
+Paper/figures/_orig_backup/
+
+# ============ DiagAD reviewer-clean repo: exclude internal/aux noise ============
+*.log
+*.err
+code/backup/
+code/docs/
+code/web/
+code/refs/
+code/scripts/figures/
+# raster exports are redundant with the vector PDF figures
+Paper/measurement/figures/*.png
+
+# ============ manuscript sources withheld from the public reviewer repo ============
+# Only Manuscript.pdf + vector figure PDFs are published; editable LaTeX/Word
+# sources and figure source assets stay local (re-add after acceptance if desired).
+Paper/measurement/*.tex
+Paper/measurement/*.bib
+Paper/measurement/*.bst
+Paper/measurement/*.cls
+Paper/measurement/*.sty
+Paper/measurement/highlights.txt
+Paper/measurement/sections/
+Paper/measurement/figures/*.svg
+Paper/measurement/figures/*.json
+Paper/*.docx

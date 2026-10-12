@@ -1,0 +1,67 @@
+# DiagAD — frozen reproduction configuration (Measurement, Table I)
+#
+# This mirrors the canonical setting used to produce the paper's main results.
+# It is the same configuration baked into `code/scripts/_eval_full.py`
+# (build_frozen_method -> FROZEN). Run with:
+#   python code/scripts/run_eval.py --config code/configs/diagad.yaml --dataset mvtec
+# (pass the DiagAD flags explicitly when using run_eval.py; see README).
+
+seed: 42
+device: cuda
+
+model:
+  # DiagAD backbone: frozen DINOv2 ViT-B/14 (facebookresearch/dinov2 via torch.hub)
+  backbone: dinov2
+  dinov2_model_id: dinov2_vitb14_reg
+  dinov2_scales: {P3: 392, P4: 224}   # two patch grids: 28x28 and 16x16
+  dinov2_proj_dim: 256                # fixed random projection (bounds covariance cost)
+  img_size: 256
+  # The following MobileCLIP fields are unused by DiagAD but kept for completeness.
+  mobileclip_model_id: MobileCLIP-S1
+  weights: weights/mobileclip_s1/open_clip_model.safetensors
+  stages: [1, 2, 3]
+  scale_names: [P3, P4, P5]
+  out_dim: 512
+  adapter_bottleneck: 256
+
+method:
+  fusion: mean                       # multi-scale mean fusion
+  single_scale: P3
+  fgsc: lowpass                     # Post-Hoc Calibration (PSC): fixed low-pass
+  fgsc_lambda: 0.6                  # a0: global base denoising strength
+  fgsc_tau: 0.4
+  fgsc_kernel: 33                   # K: Gaussian low-pass kernel size
+  texture_win: 9
+  dpa: false
+  dpa_thresholds: [0.25, 0.45]
+  prompt_level: L0+L1+L2
+  image_score_topk: 0.005           # image-level read-out: top-0.5% peaks
+  image_blur_k: 11                  # pre-read-out score-map smoothing
+  image_area_t: 0.0
+  shrinkage: 0.02                   # diagonal-covariance shrinkage
+  ref_smooth: 0                     # reference-mean spatial smoothing (structurally off)
+  ada_temperature: 4.0
+  ada_learnable: true
+  cov_mode: diag                    # diagonal-Gaussian nominal reference
+
+train:
+  fit_epochs: 5
+  lr: 1.0e-3
+  batch_size: 8
+
+eval:
+  batch_size: 4
+  map_size: 256
+  tiny_ratio: 0.001
+
+data:
+  mvtec_root: data/mvtec_ad
+  pcb_root: data/processed/pcb
+  pvel_root: data/processed/pvel_ad
+  neu_root: data/processed/neu
+  mvtec_categories: [bottle, cable, capsule, carpet, grid, hazelnut, leather, metal_nut, pill, screw, tile, toothbrush, transistor, wood, zipper]
+  mvtec_texture_like: [grid]
+  pcb_known: [missing_hole, mouse_bite, spur]
+  pcb_zero_shot: [open_circuit, short, spurious_copper]
+  neu_known: [patches, pitted_surface, rolled_in_scale]
+  neu_zero_shot: [crazing, inclusion, scratches]

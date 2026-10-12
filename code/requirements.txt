@@ -1,0 +1,13 @@
+# DiagAD evaluation environment
+# (Python 3.10+ recommended; CUDA optional — the scripts fall back to CPU)
+torch>=2.1
+torchvision
+timm
+numpy
+pandas
+scikit-learn
+opencv-python
+Pillow
+
+# NOTE: open_clip / open_clip_torch is only required for the legacy
+# MobileCLIP backbone path and is NOT used by DiagAD (backbone: dinov2).
